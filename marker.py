@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import pip
 import subprocess
 import sys
 import zipfile
@@ -8,6 +9,8 @@ package_content = ["marker.py", "Readme.md", "submission.zip", \
                    "test_filter.java", "test_filter.py", \
                    "emails", ".git"]
 
+VIRTUAL_ENV = False
+
 # Detect zip submission
 archive_name = "submission.zip"
 path_prefix = "./"
@@ -15,23 +18,41 @@ if len(sys.argv) == 2:
     arg = sys.argv[1].strip()
     # Unpack zip for marking
     if os.path.isfile(arg):
+        # Unpack zip for marking
+        print "Unpacking archive"
         if arg.endswith(".zip"):
-            with zipfile.ZipFile(arg, "r") as z:
-                z.extractall("./")
+            if os.path.basename(arg) is not archive_name:
+                sys.exit("Archive must be named: ", archive_name)
+            else:
+                with zipfile.ZipFile(arg, "r") as z:
+                    z.extractall("./")
+                path_prefix = os.path.join(arg, os.path.splitext(archive_name)[0])
+        # Install requirements if Python
+        requirements = os.path.join(path_prefix, "requirements.txt")
+        if os.path.isfile(requirements):
+            print "Installing Python requirements"
+            pip_options = ["install"]
+            if not VIRTUAL_ENV:
+                pip_options += ["--user"]
+            with open(requirements) as r:
+                for l in r:
+                    pip.main(pip_options + [l])
+        else:
+            sys.exit("Unknown Python requirements file: " + requirements)
     # Create zip for submission
     elif os.path.isdir(arg):
         arg_files = os.listdir(arg)
         if "filter.java" not in arg_files and "filter.py" not in arg_files:
             sys.exit("Filter.{py,java} missing in indicated folder:\n    " + arg)
         arg_files = [os.path.join(arg, i) for i in arg_files if i not in package_content]
-        with zipfile.ZipFile("submission.zip", "w", zipfile.ZIP_DEFLATED) as z:
+        with zipfile.ZipFile(archive_name, "w", zipfile.ZIP_DEFLATED) as z:
             while arg_files:
                 f = arg_files.pop()
                 if os.path.isfile(f):
                     z.write(f, os.path.relpath(f, arg))
                 elif os.path.isdir(f):
                     arg_files += [os.path.join(f, i) for i in os.listdir(f)]
-    sys.exit()
+        sys.exit()
 
 # Detect language
 print "Testing on sample emails"
