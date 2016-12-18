@@ -21,12 +21,13 @@ if len(sys.argv) == 2:
         # Unpack zip for marking
         print "Unpacking archive"
         if arg.endswith(".zip"):
-            if os.path.basename(arg) is not archive_name:
-                sys.exit("Archive must be named: ", archive_name)
+            print os.path.basename(arg)
+            if os.path.basename(arg) != archive_name:
+                sys.exit("Archive must be named: " + archive_name)
             else:
+                path_prefix = os.path.join(os.path.dirname(arg), os.path.splitext(archive_name)[0])
                 with zipfile.ZipFile(arg, "r") as z:
-                    z.extractall("./")
-                path_prefix = os.path.join(arg, os.path.splitext(archive_name)[0])
+                    z.extractall(path_prefix)
         # Install requirements if Python
         requirements = os.path.join(path_prefix, "requirements.txt")
         if os.path.isfile(requirements):
@@ -82,7 +83,7 @@ if LANGUAGE == "java":
 elif LANGUAGE == "python":
     execute = "python " + os.path.join(path_prefix, "filter.py") + " %s"
 
-emails_dir = os.path.join(path_prefix, "emails")
+emails_dir = os.path.join("./", "emails")
 emails = []
 for d in os.listdir(emails_dir):
     if ("spam" in d or "ham" in d) and os.path.isfile(os.path.join(emails_dir,d)):
