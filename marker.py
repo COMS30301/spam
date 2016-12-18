@@ -2,18 +2,37 @@
 import os
 import subprocess
 import sys
+import zipfile
 
-root = "./emails"
-emails = []
-for d in os.listdir(root):
-    if ("spam" in d or "ham" in d) and os.path.isfile(os.path.join(root,d)):
-        emails.append(os.path.join(root,d))
-    else:
-        print "The test filename must either contain word *spam* or *ham* indicating its class!"
-        print "The filter won't be tested on `%s` file." % os.path.join(root,d)
+package_content = ["marker.py", "Readme.md", "submission.zip", \
+                   "test_filter.java", "test_filter.py", \
+                   "emails", ".git"]
 
+# Detect zip submission
+if len(sys.argv) == 2:
+    arg = sys.argv[1].strip()
+    # Unpack zip for marking
+    if os.path.isfile(arg):
+        if arg.endswith(".zip"):
+            with zipfile.ZipFile(arg, "r") as z:
+                z.extractall("./")
+    # Create zip for submission
+    elif os.path.isdir(arg):
+        arg_files = os.listdir(arg)
+        if "filter.java" not in arg_files and "filter.py" not in arg_files:
+            sys.exit("Filter.{py,java} missing in indicated folder:\n    " + arg)
+        arg_files = [os.path.join(arg, i) for i in arg_files if i not in package_content]
+        with zipfile.ZipFile("submission.zip", "w", zipfile.ZIP_DEFLATED) as z:
+            while arg_files:
+                f = arg_files.pop()
+                if os.path.isfile(f):
+                    z.write(f, os.path.relpath(f, arg))
+                elif os.path.isdir(f):
+                    arg_files += [os.path.join(f, i) for i in os.listdir(f)]
+    sys.exit()
+
+# Detect language
 LANGUAGE = ""
-
 if os.path.isfile("./filter.java"):
     LANGUAGE = "java"
     print "`filter.java` found!"
@@ -32,9 +51,18 @@ if LANGUAGE == "java":
     comp = subprocess.Popen(java_compile.split(), stdout=subprocess.PIPE)
     comp.communicate()
 
-    execute = "java filter %s"
+    execute = "java -cp \"lib/*:$CLASSPATH\" filter %s"
 elif LANGUAGE == "python":
     execute = "python filter.py %s"
+
+emails_dir = "./emails"
+emails = []
+for d in os.listdir(emails_dir):
+    if ("spam" in d or "ham" in d) and os.path.isfile(os.path.join(emails_dir,d)):
+        emails.append(os.path.join(emails_dir,d))
+    else:
+        print "The test filename must either contain word *spam* or *ham* indicating its class!"
+        print "The filter won't be tested on `%s` file." % os.path.join(emails_dir,d)
 
 tp, tn, fp, fn = 0, 0, 0, 0
 for i in emails:
