@@ -9,6 +9,8 @@ package_content = ["marker.py", "Readme.md", "submission.zip", \
                    "emails", ".git"]
 
 # Detect zip submission
+archive_name = "submission.zip"
+path_prefix = "./"
 if len(sys.argv) == 2:
     arg = sys.argv[1].strip()
     # Unpack zip for marking
@@ -32,11 +34,12 @@ if len(sys.argv) == 2:
     sys.exit()
 
 # Detect language
+print "Testing on sample emails"
 LANGUAGE = ""
-if os.path.isfile("./filter.java"):
+if os.path.isfile(os.path.join(path_prefix, "filter.java")):
     LANGUAGE = "java"
     print "`filter.java` found!"
-elif os.path.isfile("./filter.py"):
+elif os.path.isfile(os.path.join(path_prefix, "filter.py")):
     LANGUAGE = "python"
     print "`filter.py` found!"
 else:
@@ -44,18 +47,21 @@ else:
 
 if LANGUAGE == "java":
     # Find all *.java* files
-    java_files = [d for d in os.listdir("./") if d.endswith(".java")]
+    java_files = [os.path.join(path_prefix, d) for d in os.listdir(path_prefix) if d.endswith(".java")]
     java_files = " ".join(java_files)
 
     java_compile = "javac %s" % java_files
     comp = subprocess.Popen(java_compile.split(), stdout=subprocess.PIPE)
     comp.communicate()
 
-    execute = "java -cp \"lib/*:$CLASSPATH\" filter %s"
+    classpath= ":".join([path_prefix,
+                         os.path.join(path_prefix, "lib"),
+                         "$CLASSPATH"])
+    execute = "java -cp " + classpath + " filter %s"
 elif LANGUAGE == "python":
-    execute = "python filter.py %s"
+    execute = "python " + os.path.join(path_prefix, "filter.py") + " %s"
 
-emails_dir = "./emails"
+emails_dir = os.path.join(path_prefix, "emails")
 emails = []
 for d in os.listdir(emails_dir):
     if ("spam" in d or "ham" in d) and os.path.isfile(os.path.join(emails_dir,d)):
