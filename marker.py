@@ -21,7 +21,6 @@ if len(sys.argv) == 2:
         # Unpack zip for marking
         print "Unpacking archive"
         if arg.endswith(".zip"):
-            print os.path.basename(arg)
             if os.path.basename(arg) != archive_name:
                 sys.exit("Archive must be named: " + archive_name)
             else:
