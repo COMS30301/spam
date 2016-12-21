@@ -9,7 +9,26 @@ package_content = ["marker.py", "Readme.md", "submission.zip", \
                    "test_filter.java", "test_filter.py", \
                    "emails", ".git"]
 
+# If this flag is set to `True` Python packages are installed globally.
+# Additionally, if directory is used as a parameter it will get tested,
+# rather than being compressed for submission.
 VIRTUAL_ENV = False
+
+def python_requirements(path):
+    # Install requirements if Python
+    requirements = os.path.join(path, "requirements.txt")
+    if os.path.isfile(requirements):
+        pip_options = ["install"]
+        if VIRTUAL_ENV:
+            print "Installing Python requirements globally (hopefully VirtualEnv)"
+        else:
+            print "Installing Python requirements locally (--user)"
+            pip_options += ["--user"]
+        with open(requirements) as r:
+            for l in r:
+                pip.main(pip_options + [l])
+    else:
+        sys.exit("Unknown Python requirements file: " + requirements)
 
 # Detect zip submission
 archive_name = "submission.zip"
@@ -28,31 +47,31 @@ if len(sys.argv) == 2:
                 with zipfile.ZipFile(arg, "r") as z:
                     z.extractall(path_prefix)
         # Install requirements if Python
-        requirements = os.path.join(path_prefix, "requirements.txt")
-        if os.path.isfile(requirements):
-            print "Installing Python requirements"
-            pip_options = ["install"]
-            if not VIRTUAL_ENV:
-                pip_options += ["--user"]
-            with open(requirements) as r:
-                for l in r:
-                    pip.main(pip_options + [l])
-        else:
-            sys.exit("Unknown Python requirements file: " + requirements)
-    # Create zip for submission
+        python_requirements(path_prefix)
+    # Directory passed as an argument
     elif os.path.isdir(arg):
-        arg_files = os.listdir(arg)
-        if "filter.java" not in arg_files and "filter.py" not in arg_files:
-            sys.exit("Filter.{py,java} missing in indicated folder:\n    " + arg)
-        arg_files = [os.path.join(arg, i) for i in arg_files if i not in package_content]
-        with zipfile.ZipFile(archive_name, "w", zipfile.ZIP_DEFLATED) as z:
-            while arg_files:
-                f = arg_files.pop()
-                if os.path.isfile(f):
-                    z.write(f, os.path.relpath(f, arg))
-                elif os.path.isdir(f):
-                    arg_files += [os.path.join(f, i) for i in os.listdir(f)]
-        sys.exit()
+        if VIRTUAL_ENV:
+            # Test submission (directory rather than zip)
+            print "VIRTUAL_ENV=True; testing directory."
+            path_prefix = arg
+            # Install requirements if Python
+            python_requirements(path_prefix)
+        else:
+            # Create zip for submission
+            print "Creating zip for submission..."
+            arg_files = os.listdir(arg)
+            if "filter.java" not in arg_files and "filter.py" not in arg_files:
+                sys.exit("Filter.{py,java} missing in indicated folder:\n    " + arg)
+            arg_files = [os.path.join(arg, i) for i in arg_files if i not in package_content]
+            with zipfile.ZipFile(archive_name, "w", zipfile.ZIP_DEFLATED) as z:
+                while arg_files:
+                    f = arg_files.pop()
+                    if os.path.isfile(f):
+                        z.write(f, os.path.relpath(f, arg))
+                    elif os.path.isdir(f):
+                        arg_files += [os.path.join(f, i) for i in os.listdir(f)]
+            print "Please upload: %s" % archive_name
+            sys.exit()
 
 # Detect language
 print "Testing on sample emails"

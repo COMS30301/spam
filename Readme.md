@@ -37,10 +37,13 @@ python marker.py /Users/xyz/my_filter
 
 where `/Users/xyz/my_filter` is a folder with your code (`filter.{py,java}` and the report).
 
+For this to work `VIRTUAL_ENV` variable in `marker.py` has to be set to `False` i.e. `VIRTUAL_ENV = False`.  
+If the flag is set to `True` passing a directory as an argument will result in the marker attempting to test the folder as an unpacked submission. **Students should not use this option.**
+
 ## Testing your submission ##
 To test your submission you can execute the following line:
 ```
-python marker.pu path/to/submission.zip
+python marker.py path/to/submission.zip
 ```
 
 where `path/to/submission.zip` is path to `submission.zip` file created with this script.
