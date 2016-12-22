@@ -9,6 +9,34 @@ package_content = ["marker.py", "Readme.md", "submission.zip", \
                    "test_filter.java", "test_filter.py", \
                    "emails", ".git"]
 
+marking_criteria = """
+Part 1 (40%):
+- [ ] Your program classifies the testing set with an accuracy significantly higher than random within 30 minutes
+- [ ] Use very simple data preprocessing so that the emails can be read into the Naive Bayes (remove everything else other than words from emails)
+- [ ] Write simple Naive Bayes multinomial classifier or use an implementation from a library of your choice
+- [ ] Classify the data
+- [ ] Report your results with a metric (e.g. accuracy) and method (e.g. cross validation) of your choice
+- [ ] Choose a baseline and compare your classifier against it
+Part 2 (30%):
+- [ ] Use some smart feature processing techniques to improve the classification results
+- [ ] Compare the classification results with and without these techniques
+- [ ] Analyse how the classification results depend on the parameters (if available) of chosen techniques
+- [ ] Compare (statistically) your results against any other algorithm of your choice (use can use any library); compare and contrast results, ensure fair comparison
+Part 3 (30%):
+- [ ] Calibration (15%): calibrate Naive Bayes probabilities, such that they result in low mean squared error
+- [ ] Naive Bayes extension (15%): modify the algorithm in some interesting way (e.g. weighted Naive Bayes)
+
+~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*
+Classification evaluation:
+"""
+
+feedback_file = "feedback.txt"
+archive_name = "submission.zip"
+path_prefix = "./"
+emails_path_prefix = "./"
+emails_dir = ["emails"]
+emails_dir = [os.path.join(emails_path_prefix, i) for i in emails_dir]
+
 # If this flag is set to `True` Python packages are installed globally.
 # Additionally, if directory is used as a parameter it will get tested,
 # rather than being compressed for submission.
@@ -31,8 +59,6 @@ def python_requirements(path):
         sys.exit("Unknown Python requirements file: " + requirements)
 
 # Detect zip submission
-archive_name = "submission.zip"
-path_prefix = "./"
 if len(sys.argv) == 2:
     arg = sys.argv[1].strip()
     # Unpack zip for marking
@@ -101,54 +127,64 @@ if LANGUAGE == "java":
 elif LANGUAGE == "python":
     execute = "python " + os.path.join(path_prefix, "filter.py") + " %s"
 
-emails_dir = os.path.join("./", "emails")
-emails = []
-for d in os.listdir(emails_dir):
-    if ("spam" in d or "ham" in d) and os.path.isfile(os.path.join(emails_dir,d)):
-        emails.append(os.path.join(emails_dir,d))
-    else:
-        print "The test filename must either contain word *spam* or *ham* indicating its class!"
-        print "The filter won't be tested on `%s` file." % os.path.join(emails_dir,d)
+evaluation_results = []
+for e in emails_dir:
+    evaluation = ""
+    emails = []
+    for d in os.listdir(e):
+        if ("spam" in d or "ham" in d) and os.path.isfile(os.path.join(e,d)):
+            emails.append(os.path.join(e,d))
+        else:
+            print "The test filename must either contain word *spam* or *ham* indicating its class!"
+            print "The filter won't be tested on `%s` file." % os.path.join(e,d)
 
-tp, tn, fp, fn = 0, 0, 0, 0
-for i in emails:
-    current_email = execute % i
-    if "spam" in i:
-        ground_truth = "spam"
-    elif "ham" in i:
-        ground_truth = "ham"
-    else:
-        sys.exit("File %s has neither *ham* nor *spam* keyword in its name!" % i)
+    tp, tn, fp, fn = 0, 0, 0, 0
+    for i in emails:
+        current_email = execute % i
+        if "spam" in i:
+            ground_truth = "spam"
+        elif "ham" in i:
+            ground_truth = "ham"
+        else:
+            sys.exit("File %s has neither *ham* nor *spam* keyword in its name!" % i)
 
-    exe = subprocess.Popen(current_email.split(), stdout=subprocess.PIPE)
-    output, error = exe.communicate()
+        exe = subprocess.Popen(current_email.split(), stdout=subprocess.PIPE)
+        output, error = exe.communicate()
 
-    output = output.strip()
-    if output == "spam" and ground_truth == "spam":
-        print "%s correctly predicted as SPAM" % i
-        tp += 1
-    elif output == "spam" and ground_truth == "ham":
-        print "%s incorrectly predicted as SPAM" % i
-        fp += 1
-    elif output == "ham" and ground_truth == "ham":
-        print "%s correctly predicted as HAM" % i
-        tn += 1
-    elif output == "ham" and ground_truth == "spam":
-        print "%s incorrectly predicted as HAM" % i
-        fn += 1
-    else:
-        print "Currently tested email is: %s" % i
-        print "The output of your program should be either *spam* or *ham*."
-        sys.exit("Current output:\n%s" % output)
+        output = output.strip()
+        if output == "spam" and ground_truth == "spam":
+            print "%s correctly predicted as SPAM" % i
+            tp += 1
+        elif output == "spam" and ground_truth == "ham":
+            print "%s incorrectly predicted as SPAM" % i
+            fp += 1
+        elif output == "ham" and ground_truth == "ham":
+            print "%s correctly predicted as HAM" % i
+            tn += 1
+        elif output == "ham" and ground_truth == "spam":
+            print "%s incorrectly predicted as HAM" % i
+            fn += 1
+        else:
+            print "Currently tested email is: %s" % i
+            print "The output of your program should be either *spam* or *ham*."
+            sys.exit("Current output:\n%s" % output)
 
-# Print statistics
-print "Contingency table:"
-print """
-Predicted:    | SPAM | HAM
-----------------------------
-Ground Truth: |      |
-    SPAM      | %4d | %4d
-    HAM       | %4d | %4d
-""" % (tp, fn, fp, tn)
-acc = 100.0*(tp+tn)/(fp+fn+tp+tn)
-print "Accuracy: %.2f" % (acc) + "%"
+    # Print statistics
+    evaluation += "Test %s" % e
+    evaluation += """
+    Predicted:    | SPAM | HAM
+    ----------------------------
+    Ground Truth: |      |
+        SPAM      | %4d | %4d
+        HAM       | %4d | %4d
+    """ % (tp, fn, fp, tn)
+    acc = 100.0*(tp+tn)/(fp+fn+tp+tn)
+    evaluation += "Accuracy: %.2f" % (acc) + "%\n"
+    print evaluation
+    evaluation_results.append(evaluation)
+
+# Save feedback
+if VIRTUAL_ENV:
+    with open(os.path.join(path_prefix, feedback_file), "w") as ff:
+        ff.write(marking_criteria)
+        ff.write("\n++++++++++++++++++++++++++++++\n".join(evaluation_results))
