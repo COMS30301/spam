@@ -3,13 +3,14 @@ import os
 import pip
 import subprocess
 import sys
+import time
 import zipfile
 
 package_content = ["marker.py", "Readme.md", "submission.zip", \
                    "test_filter.java", "test_filter.py", \
                    "emails", ".git"]
 
-marking_criteria = """
+marking_criteria = """\
 Part 1 (40%):
 - [ ] Your program classifies the testing set with an accuracy significantly higher than random within 30 minutes
 - [ ] Use very simple data preprocessing so that the emails can be read into the Naive Bayes (remove everything else other than words from emails)
@@ -127,6 +128,7 @@ if LANGUAGE == "java":
 elif LANGUAGE == "python":
     execute = "python " + os.path.join(path_prefix, "filter.py") + " %s"
 
+evaluation_start_time = time.time()
 evaluation_results = []
 for e in emails_dir:
     evaluation = ""
@@ -153,16 +155,16 @@ for e in emails_dir:
 
         output = output.strip()
         if output == "spam" and ground_truth == "spam":
-            print "%s correctly predicted as SPAM" % i
+            if not VIRTUAL_ENV: print "%s correctly predicted as SPAM" % i
             tp += 1
         elif output == "spam" and ground_truth == "ham":
-            print "%s incorrectly predicted as SPAM" % i
+            if not VIRTUAL_ENV: print "%s incorrectly predicted as SPAM" % i
             fp += 1
         elif output == "ham" and ground_truth == "ham":
-            print "%s correctly predicted as HAM" % i
+            if not VIRTUAL_ENV: print "%s correctly predicted as HAM" % i
             tn += 1
         elif output == "ham" and ground_truth == "spam":
-            print "%s incorrectly predicted as HAM" % i
+            if not VIRTUAL_ENV: print "%s incorrectly predicted as HAM" % i
             fn += 1
         else:
             print "Currently tested email is: %s" % i
@@ -179,12 +181,18 @@ for e in emails_dir:
         HAM       | %4d | %4d
     """ % (tp, fn, fp, tn)
     acc = 100.0*(tp+tn)/(fp+fn+tp+tn)
-    evaluation += "Accuracy: %.2f" % (acc) + "%\n"
-    print evaluation
+    evaluation += "Accuracy: %.2f" % (acc) + "%"
+    print "\n", evaluation
     evaluation_results.append(evaluation)
+evaluation_end_time = time.time()
+evaluation_time = evaluation_end_time - evaluation_start_time
+print "\nEvaluation time: %s seconds" % evaluation_time
 
 # Save feedback
 if VIRTUAL_ENV:
     with open(os.path.join(path_prefix, feedback_file), "w") as ff:
         ff.write(marking_criteria)
-        ff.write("\n++++++++++++++++++++++++++++++\n".join(evaluation_results))
+        ff.write("\n\n++++++++++++++++++++++++++++++\n\n".join(evaluation_results))
+        ff.write("\n\nEvaluation time: %s seconds" % evaluation_time)
+        if evaluation_time > 1800:
+            ff.write("\nFAILED time test")
