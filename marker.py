@@ -133,7 +133,6 @@ if LANGUAGE == "java":
 elif LANGUAGE == "python":
     execute = "python " + os.path.join(path_prefix, "filter.py") + " %s"
 
-evaluation_start_time = time.time()
 evaluation_results = []
 for e in emails_dir:
     evaluation = ""
@@ -146,6 +145,7 @@ for e in emails_dir:
             print "The filter won't be tested on `%s` file." % os.path.join(e,d)
 
     tp, tn, fp, fn = 0, 0, 0, 0
+    evaluation_start_time = time.time()
     for i in emails:
         current_email = execute % i
         if "spam" in i:
@@ -187,17 +187,18 @@ for e in emails_dir:
     """ % (tp, fn, fp, tn)
     acc = 100.0*(tp+tn)/(fp+fn+tp+tn)
     evaluation += "Accuracy: %.2f" % (acc) + "%"
+
+    evaluation_end_time = time.time()
+    evaluation_time = evaluation_end_time - evaluation_start_time
+    evaluation += "\nEvaluation time: %s seconds" % evaluation_time
+    if evaluation_time > 1800:
+        evaluation += "\nFAILED time test"
+
     print "\n", evaluation
     evaluation_results.append(evaluation)
-evaluation_end_time = time.time()
-evaluation_time = evaluation_end_time - evaluation_start_time
-print "\nEvaluation time: %s seconds" % evaluation_time
 
 # Save feedback
 if VIRTUAL_ENV:
     with open(os.path.join(path_prefix, feedback_file), "w") as ff:
         ff.write(marking_criteria)
         ff.write("\n\n++++++++++++++++++++++++++++++\n\n".join(evaluation_results))
-        ff.write("\n\nEvaluation time: %s seconds" % evaluation_time)
-        if evaluation_time > 1800:
-            ff.write("\nFAILED time test")
