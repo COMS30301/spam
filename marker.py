@@ -43,8 +43,13 @@ emails_dir = [os.path.join(emails_path_prefix, i) for i in emails_dir]
 # rather than being compressed for submission.
 VIRTUAL_ENV = False
 
+# Install requirements
+install_requirements = False
+
 def python_requirements(path):
     # Install requirements if Python
+    if not install_requirements:
+        return
     requirements = os.path.join(path, "requirements.txt")
     if os.path.isfile(requirements):
         pip_options = ["install"]
