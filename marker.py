@@ -43,6 +43,14 @@ emails_dir = [os.path.join(emails_path_prefix, i) for i in emails_dir]
 # rather than being compressed for submission.
 VIRTUAL_ENV = False
 
+# Show progress in email testing
+show_progress = True
+try:
+    from nyanbar import NyanBar
+    progress_bar = "nyan"
+except ImportError:
+    progress_bar = "classic"
+
 # Install requirements
 install_requirements = False
 
@@ -134,7 +142,7 @@ elif LANGUAGE == "python":
     execute = "python " + os.path.join(path_prefix, "filter.py") + " %s"
 
 evaluation_results = []
-for e in emails_dir:
+for ei, e in enumerate(emails_dir):
     evaluation = ""
     emails = []
     for d in os.listdir(e):
@@ -144,9 +152,16 @@ for e in emails_dir:
             print "The test filename must either contain word *spam* or *ham* indicating its class!"
             print "The filter won't be tested on `%s` file." % os.path.join(e,d)
 
+    if show_progress and progress_bar == "nyan":
+        print "Test [%d/%d]" % (ei+1, len(emails_dir))
+        progress = NyanBar(tasks=100)
     tp, tn, fp, fn = 0, 0, 0, 0
     evaluation_start_time = time.time()
-    for i in emails:
+    for ii, i in enumerate(emails):
+        if show_progress and progress_bar == "classic":
+            print "[%d/%d] %.2d%% (%s)" % (ei+1, len(emails_dir), 100.*ii/len(emails), i)
+        elif show_progress and progress_bar == "nyan":
+            progress.update(100.*ii/len(emails))
         current_email = execute % i
         if "spam" in i:
             ground_truth = "spam"
@@ -175,6 +190,10 @@ for e in emails_dir:
             print "Currently tested email is: %s" % i
             print "The output of your program should be either *spam* or *ham*."
             sys.exit("Current output:\n%s" % output)
+    if show_progress and progress_bar == "classic":
+        print "[%d/%d] %.2d%% (%s)" % (ei+1, len(emails_dir), 100, "")
+    elif show_progress and progress_bar == "nyan":
+        progress.finish()
 
     # Print statistics
     evaluation += "Test %s" % e
