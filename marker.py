@@ -162,10 +162,10 @@ for ei, e in enumerate(emails_dir):
             print "[%d/%d] %.2d%% (%s)" % (ei+1, len(emails_dir), 100.*ii/len(emails), i)
         elif show_progress and progress_bar == "nyan":
             progress.update(100.*ii/len(emails))
-        current_email = execute % i
-        if "spam" in i:
+        current_email = execute % os.path.abspath(i)
+        if "spam" in os.path.split(i)[1]:
             ground_truth = "spam"
-        elif "ham" in i:
+        elif "ham" in os.path.split(i)[1]:
             ground_truth = "ham"
         else:
             sys.exit("File %s has neither *ham* nor *spam* keyword in its name!" % i)
