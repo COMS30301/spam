@@ -36,7 +36,7 @@ emails_an_hour = 1000.0
 feedback_file = "feedback.txt"
 archive_name = "submission.zip"
 path_prefix = "./"
-emails_path_prefix = "./"
+emails_path_prefix = os.path.dirname(os.path.realpath(__file__))
 emails_dir = ["emails"]
 emails_dir = [os.path.join(emails_path_prefix, i) for i in emails_dir]
 
@@ -129,19 +129,21 @@ else:
 
 if LANGUAGE == "java":
     # Find all *.java* files
-    java_files = [os.path.join(path_prefix, d) for d in os.listdir(path_prefix) if d.endswith(".java")]
+    java_files = [d for d in os.listdir(path_prefix) if d.endswith(".java")]
     java_files = " ".join(java_files)
+    jar_files = ["./", "./lib/"]
+    jar_files += [d for d in os.listdir(path_prefix) if d.endswith(".jar")]
+    if os.path.exists(os.path.join(path_prefix, "lib")):
+        jar_files += [os.path.join("lib", d) for d in os.listdir(os.path.join(path_prefix, "lib")) if d.endswith(".jar")]
+    jar_files += ["$CLASSPATH"]
+    classpath= ":".join(jar_files)
 
-    java_compile = "javac %s" % java_files
-    comp = subprocess.Popen(java_compile.split(), stdout=subprocess.PIPE)
+    java_compile = "javac -cp %s %s" % (classpath, java_files)
+    comp = subprocess.Popen(java_compile.split(), cwd=path_prefix,  stdout=subprocess.PIPE)
     comp.communicate()
-
-    classpath= ":".join([path_prefix,
-                         os.path.join(path_prefix, "lib"),
-                         "$CLASSPATH"])
     execute = "java -cp " + classpath + " filter %s"
 elif LANGUAGE == "python":
-    execute = "python " + os.path.join(path_prefix, "filter.py") + " %s"
+    execute = "python filter.py %s"
 
 evaluation_results = []
 for ei, e in enumerate(emails_dir):
