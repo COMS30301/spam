@@ -31,6 +31,8 @@ Part 3 (30%):
 Classification evaluation:
 """
 
+emails_an_hour = 1000.0
+
 feedback_file = "feedback.txt"
 archive_name = "submission.zip"
 path_prefix = "./"
@@ -210,7 +212,7 @@ for ei, e in enumerate(emails_dir):
     evaluation_end_time = time.time()
     evaluation_time = evaluation_end_time - evaluation_start_time
     evaluation += "\nEvaluation time: %s seconds" % evaluation_time
-    if evaluation_time > 1800:
+    if evaluation_time > 3600*(fp+fn+tp+tn)/emails_an_hour:
         evaluation += "\nFAILED time test"
 
     print "\n", evaluation
