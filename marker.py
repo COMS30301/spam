@@ -191,7 +191,12 @@ for ei, e in enumerate(emails_dir):
         else:
             print "Currently tested email is: %s" % i
             print "The output of your program should be either *spam* or *ham*."
-            sys.exit("Current output:\n%s" % output)
+            print "Current output:\n    %s" % output
+            ri = raw_input("(s) to skip; other keys to exit\n> ")
+            if ri == "s":
+                continue
+            else:
+                sys.exit()
     if show_progress and progress_bar == "classic":
         print "[%d/%d] %.2d%% (%s)" % (ei+1, len(emails_dir), 100, "")
     elif show_progress and progress_bar == "nyan":
