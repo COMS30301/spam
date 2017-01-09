@@ -203,7 +203,7 @@ for ei, e in enumerate(emails_dir):
         progress.finish()
 
     # Print statistics
-    evaluation += "Test %s" % e
+    evaluation += "Test %s" % os.path.split(e)[1]
     evaluation += """
     Predicted:    | SPAM | HAM
     ----------------------------
